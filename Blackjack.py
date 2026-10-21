@@ -152,9 +152,55 @@ def test_agent(agent, n_episodes=1000):
     print(f"Draw rate: {np.mean(rewards == 0):.2%}")
     print(f"Loss rate: {np.mean(rewards == -1):.2%}")
 
+def record_agent_video(agent, n_episodes=1000):
+    env = gym.make(
+        "Blackjack-v1",
+        render_mode="rgb_array"
+    )
 
+    frames = []
+
+    for episode in range(n_episodes):
+        state, _ = env.reset()
+        done = False
+        total_reward = 0
+
+        while not done:
+            # Capture the current game screen
+            frames.append(env.render())
+
+            # Use the trained policy without exploration
+            action = agent.get_action(state, training=False)
+
+            state, reward, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
+            total_reward += reward
+
+        # Capture the final screen of the episode
+        frames.append(env.render())
+
+        print(
+            f"Episode {episode + 1}/{n_episodes}: "
+            f"Reward = {total_reward}"
+        )
+
+    env.close()
+
+    import imageio.v2 as imageio
+
+    output_file = "blackjack_agent.mp4"
+
+    imageio.mimsave(
+        output_file,
+        frames,
+        fps=5,
+        macro_block_size=16
+    )
+
+    print(f"Single video saved as: {output_file}")
 
 if __name__ == "__main__":
     agent, episode_rewards = train_agent()
     plot_results(episode_rewards)
     test_agent(agent, n_episodes=1000)
+    record_agent_video(agent, n_episodes=1000)
